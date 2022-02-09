@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load cache %}
+{% block title %}Подписки на любимых авторов{% endblock %}
+{% block content %}
+  <h1>Подписки на любимых авторов</h1>
+{% cache 20 page_obj.page_number %}
+{% include 'posts/includes/switcher.html' %}
+{% for post in page_obj %}
+<article>
+  {% include "posts/includes/post.html" %}
+  <ul> 
+    {% if post.group.title %}
+      <a href= "{% url 'posts:group_posts' post.group.slug %}"> 
+      все записи группы </a> 
+    {% endif %} 
+  </ul>
+</article>
+{% if not forloop.last %}<hr>{% endif %}
+{% endfor %} 
+{% endcache %}
+{% include 'posts/includes/paginator.html' %}
+{% endblock%} 

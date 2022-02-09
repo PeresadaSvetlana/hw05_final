@@ -1,0 +1,25 @@
+
+{% extends "base.html" %}
+{% block title %}Об авторе проекта{% endblock %}
+{% block content %}
+{% load static %}
+<h1>Привет, я автор</h1>
+<h3>Давайте знакомиться! Меня зовут Светлана, я живу в Ростове-на-Дону, мне 26 лет. </h3>
+<h3>Вот значит пытаюсь стать программистом) </h3>
+<h3>Надеюсь у меня все получится, а то Тыковка очень любит кушать разные вкусняхи. </h3>
+<h3>А вот кстати и она: </h3>
+<img src="{% static "img/notdog.jpg" %}" width="200" 
+height="250" class="d-inline-block align-top" alt=""> 
+
+<p>
+  Захотите дружить, залетайте:  
+</p>
+<ul>
+  <li>
+     <a href="https://github.com/PeresadaSvetlana"> GitHub </a>
+  </li>
+  <li>
+    <a href="https://instagram.com/peresada_sweet"> Instagram </a>
+  </li>
+</ul>
+{% endblock %}
