@@ -139,7 +139,7 @@ class PostFormTests(TestCase):
             ).exists()
         )
 
-    def test_comment_show_correct_context(self):
+    def test_create_comment(self):
         """Валидная форма создает запись в Comment."""
         comment_count = Comment.objects.count()
         form_data = {
@@ -168,9 +168,24 @@ class PostFormTests(TestCase):
     def test_create_post_guest_client(self):
         """Проверяем, создания поста неавторизованным пользователем."""
         response_create = self.guest_client.post(reverse('posts:post_create'))
-        response_comment = self.guest_client.post(reverse(
+        self.assertEqual(response_create.status_code, HTTPStatus.FOUND)
+
+    def test_create_comment_guest_client(self):
+        comment_count = Comment.objects.count()
+        form_data = {
+            'post': self.post,
+            'author': self.guest_client,
+            'text': COMMENT_TEXT,
+        }
+        self.guest_client.post(reverse(
+            'posts:add_comment',
+            kwargs={'post_id': self.post.id}),
+            data=form_data,
+            follow=True
+        )
+        response_redirect = self.guest_client.post(reverse(
             'posts:add_comment',
             kwargs={'post_id': self.post.id})
         )
-        self.assertEqual(response_create.status_code, HTTPStatus.FOUND)
-        self.assertEqual(response_comment.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Comment.objects.count(), comment_count)
+        self.assertEqual(response_redirect.status_code, HTTPStatus.FOUND)

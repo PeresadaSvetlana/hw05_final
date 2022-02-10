@@ -16,7 +16,7 @@ def paginator_of_page(request, posts):
 
 
 def index(request):
-    posts = Post.objects.select_related()
+    posts = Post.objects.select_related('group', 'author')
     page_obj = paginator_of_page(request, posts)
     context = {
         'page_obj': page_obj,
@@ -54,12 +54,10 @@ def profile(request, username):
 def post_detail(request, post_id):
     # Здесь код запроса к модели и создание словаря контекста
     post = get_object_or_404(Post, id=post_id)
-    post_all = post.author.posts.all().count()
     comment_form = CommentForm(request.POST or None)
     comment_post = post.comments.all()
     context = {
         'post': post,
-        'post_all': post_all,
         'comment_form': comment_form,
         'comment_post': comment_post
     }

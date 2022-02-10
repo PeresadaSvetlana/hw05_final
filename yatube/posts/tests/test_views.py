@@ -97,6 +97,8 @@ class PostViewsTests(TestCase):
         self.authorized_client.force_login(self.another_user)
         # Автор поста
         self.author_client.force_login(self.user_author)
+        # Очищаем кэш
+        cache.clear()
 
     # Проверяем используемые шаблоны
     def test_pages_uses_correct_template(self):
@@ -244,6 +246,31 @@ class PostViewsTests(TestCase):
         post_text = post.text
         self.assertEqual(post_text, NEW_HEADER)
 
+
+class CacheViewsTest(TestCase):
+    # Здесь создаются фикстуры: клиент и 13 тестовых записей.
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Создадим запись в БД для проверки доступности адреса task/test-slug/
+        cls.user_author = User.objects.create_user(USERNAME)
+        cls.another_user = User.objects.create_user(ANOTHER_USERNAME)
+        cls.group = Group.objects.create(
+            title=GROUP_NAME,
+            slug=SLUG,
+            description=DESCRIPTION
+        )
+        for num_page in range(NUMBER_OF_POSTS_ALL):
+            cls.post = Post.objects.create(
+                text=f'Тестовый заголовок{num_page} ',
+                author=cls.user_author,
+                group=cls.group
+            )
+
+    def setUp(self):
+        # Создаем неавторизованный клиент
+        self.guest_client = Client()
+
     def test_cache_post_index(self):
         cache_post = Post.objects.create(
             text=CACHE_TEXT,
@@ -260,33 +287,6 @@ class PostViewsTests(TestCase):
         response_one = self.guest_client.get(reverse('posts:index'))
         post_content_three = response_one.content
         self.assertNotEquals(post_content, post_content_three)
-
-    def test_authorized_client_follow(self):
-        user = self.another_user
-        author = self.user_author
-        count = Follow.objects.count()
-        Follow.objects.create(user=user, author=author)
-        self.assertNotEquals(Follow.objects.count(), count)
-        Follow.objects.filter(user=user, author=author).delete()
-        cache.clear()
-        self.assertEquals(Follow.objects.count(), count)
-
-    def test_another_user_follow(self):
-        user = self.another_user
-        author = self.user_author
-        Follow.objects.create(user=user, author=author)
-        response_one = self.author_client.get(reverse('posts:follow_index'))
-        response_two = self.authorized_client.get(
-            reverse('posts:follow_index')
-        )
-        Post.objects.create(
-            text=NEW_HEADER,
-            author=self.another_user,
-            group=self.group
-        )
-        count_one = len(response_one.context['page_obj'])
-        count_two = len(response_two.context['page_obj'])
-        self.assertNotEquals(count_one, count_two)
 
 
 class PaginatorViewsTest(TestCase):
@@ -328,3 +328,82 @@ class PaginatorViewsTest(TestCase):
         self.assertEqual(
             len(response.context['page_obj']), NUMBER_OF_POSTS_REMAINDER
         )
+
+
+class FollowViewsTest(TestCase):
+    # Здесь создаются фикстуры: клиент и 13 тестовых записей.
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Создадим запись в БД для проверки доступности адреса task/test-slug/
+        cls.user_author = User.objects.create_user(USERNAME)
+        cls.another_user = User.objects.create_user(ANOTHER_USERNAME)
+        cls.group = Group.objects.create(
+            title=GROUP_NAME,
+            slug=SLUG,
+            description=DESCRIPTION
+        )
+        for num_page in range(NUMBER_OF_POSTS_ALL):
+            cls.post = Post.objects.create(
+                text=f'Тестовый заголовок{num_page} ',
+                author=cls.user_author,
+                group=cls.group
+            )
+
+    def setUp(self):
+        # Создаем неавторизованный клиент
+        self.guest_client = Client()
+        # Создаем второй клиент
+        self.authorized_client = Client()
+        # Создаем трейтий клиент
+        self.author_client = Client()
+        # Авторизуем пользователя
+        self.authorized_client.force_login(self.another_user)
+        # Автор поста
+        self.author_client.force_login(self.user_author)
+        # Очищаем кэш
+        cache.clear()
+
+    def test_authorized_client_follow(self):
+        user = self.another_user
+        author = self.user_author
+        count = Follow.objects.count()
+        Follow.objects.create(user=user, author=author)
+        cache.clear()
+        self.assertNotEquals(Follow.objects.count(), count)
+
+    def test_authorized_client_unfollow(self):
+        user = self.another_user
+        author = self.user_author
+        count = Follow.objects.count()
+        Follow.objects.filter(user=user, author=author).delete()
+        cache.clear()
+        self.assertEquals(Follow.objects.count(), count)
+
+    def test_unfollow_user(self):
+        user = self.another_user
+        author = self.user_author
+        Follow.objects.create(user=user, author=author)
+        count_one = len(Post.objects.filter(author__following__user=user))
+        Post.objects.create(
+            text=NEW_HEADER,
+            author=self.another_user,
+            group=self.group
+        )
+        cache.clear()
+        count_two = len(Post.objects.filter(author__following__user=user))
+        self.assertEquals(count_one, count_two)
+
+    def test_follow_user(self):
+        user = self.another_user
+        author = self.user_author
+        Follow.objects.create(user=user, author=author)
+        count_one = len(Post.objects.filter(author__following__user=user))
+        Post.objects.create(
+            text=NEW_HEADER,
+            author=self.user_author,
+            group=self.group
+        )
+        cache.clear()
+        count_two = len(Post.objects.filter(author__following__user=user))
+        self.assertNotEquals(count_one, count_two)
