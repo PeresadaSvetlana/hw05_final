@@ -52,7 +52,6 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
-    # Здесь код запроса к модели и создание словаря контекста
     post = get_object_or_404(Post, id=post_id)
     comment_form = CommentForm(request.POST or None)
     comment_post = post.comments.all()
@@ -113,7 +112,6 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    # информация о текущем пользователе доступна в переменной request.user
     following = Post.objects.filter(author__following__user=request.user)
     page_obj = paginator_of_page(request, following)
     context = {
@@ -124,7 +122,7 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
-    # Подписаться на автора
+    """Подписаться на автора."""
     author = get_object_or_404(User, username=username)
     user = request.user
     if user != author:

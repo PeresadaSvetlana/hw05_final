@@ -27,9 +27,9 @@
             </div>
           {% endfor %}
           {% endif %}
-          {%if is_edit%}<form method="post"
+          {%if is_edit%}<form method="post" enctype="multipart/form-data"
             action="{% url 'posts:post_edit' post.id %}">
-          {%else%}<form method="post"
+          {%else%}<form method="post" enctype="multipart/form-data"
             action="{% url 'posts:post_create' %}">{%endif%}
           {% csrf_token %}
           {% for field in form %}
